@@ -1,0 +1,50 @@
+[project]
+name = "Twrap"
+version = "0.1.0"
+description = "Wrapper package for Tfold for the folding of RNA/DNA sequences \
+    and analysis of the resulting folds."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE.txt"}
+keywords = ["RNA", "DNA", "Folding", "Stemloops", "m&b"]
+authors = [
+  {email = "sam.clark@york.ac.uk"},
+  {name = "Sam Clark"}
+]
+maintainers = [
+  {name = "Sam Clark", email = "sam.clark@york.ac.uk"}
+]
+classifiers = [
+  "Programming Language :: Python"
+]
+
+dependencies = [
+  "datetime",
+  "multiprocessing",
+  "os",
+  "re",
+  "time",
+  "shutil",
+  "subprocess",
+  "sys",
+  "pandas",
+  "glob",
+  "numpy",
+  "Bio",
+  "pathlib"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest < 5.0.0",
+]
+
+[project.urls]
+repository = "https://github.com"
+changelog = "https://github.com/PsamClark/Twrap/master/CHANGELOG.md"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+requires = ["setuptools>=40.6.0"].
