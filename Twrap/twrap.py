@@ -224,7 +224,7 @@ class Twrap(object):
             if not isinstance(self._shp_file, str):
                 raise InputError('Shape file must be string or None!')
 
-            elif not os.path.isfile('./' + self._shp_file):
+            elif not os.path.isfile(sys.path[0]+'/' + self._shp_file):
                 raise FileError(
                     'Shape file "' +
                     self._shp_file +
@@ -245,44 +245,44 @@ class Twrap(object):
             if not isinstance(self._mb_file, str):
                 raise InputError('m&b file must be string or None!')
 
-            elif not os.path.isfile('./' + self._mb_file):
+            elif not os.path.isfile(sys.path[0]+'/' + self._mb_file):
                 raise FileError('m&b file "' + self._mb_file + '" not found!')
 
     def _file_dir_pop(self):
 
         # delete and recreate fold_output dir
-        if os.path.exists('fold_output'):
-            shutil.rmtree('fold_output')
-        os.makedirs('fold_output')
+        if os.path.exists(sys.path[0]+'/fold_output'):
+            shutil.rmtree(sys.path[0]+'/fold_output')
+        os.makedirs(sys.path[0]+'/fold_output')
 
         # create stemloop/loop output dir
         try:
-            os.mkdir(self._sl_method + '_output')
+            os.mkdir(sys.path[0]+'/'+self._sl_method + '_output')
         except OSError:
             pass
 
         # create shape data output file
         try:
-            os.mkdir('shp_output')
+            os.mkdir(sys.path[0]+'/shp_output')
         except OSError:
             pass
 
         # print sequence output dir
         try:
-            os.mkdir('seq_output')
+            os.mkdir(sys.path[0]+'/seq_output')
         except OSError:
             pass
 
         # if m&b file exists populat value array
         if self._mb_file is not None:
-            mb_vals = pd.read_csv(self._mb_file)
+            mb_vals = pd.read_csv(sys.path[0]+'/'+self._mb_file)
             self._mb_vals = mb_vals.values.astype(float)
 
         # if shape file exists populate data
         if self._shp_file is not None:
 
-            self._shp = [float(i.strip('\n')) for i in open(self._shp_file,
-                                                            'r').readlines()]
+            self._shp = [float(i.strip('\n')) for i in 
+                open(sys.path[0]+'/'+self._shp_file, 'r').readlines()]
 
         # setup parameter file
         param_files = {
@@ -354,20 +354,20 @@ class Twrap(object):
             self.fold_wrapper(i)
             self.sl_reader(i)
 
-            for filename in Path('./shp_output').glob('shape_file'+self.seq_names[i]+'*'):
+            for filename in Path(sys.path[0]+'/shp_output').glob(self.seq_names[i]+'*'):
                 filename.unlink()
 
-            for filename in Path('./seq_output').glob('shape_file'+self.seq_names[i]+'*'):
+            for filename in Path(sys.path[0]+'/seq_output').glob(self.seq_names[i]+'*'):
                 filename.unlink()
 
     def seqfile_restructure(self):
         """Restructure sequence files so that they can be read by Tfold"""
 
         # if sequence file doesnt already exist continue
-        if not os.path.exists('seq_output/' + self._temp_name):
+        if not os.path.exists(sys.path[0]+'/seq_output/' + self._temp_name):
 
             # create and write info into seq_file
-            seqf_out = open('seq_output/' + self._temp_name, 'w')
+            seqf_out = open(sys.path[0]+'/seq_output/' + self._temp_name, 'w')
             seqf_out.write('>' + self._temp_name + '\n')
             i = 0
 
@@ -386,11 +386,11 @@ class Twrap(object):
 
         # if seqin is file
         if isinstance(seqin, str):
-            if not os.path.isfile('./' + seqin):
+            if not os.path.isfile(sys.path[0]+'/' + seqin):
                 raise FileError('Sequence file "' + seqin + '" not found!')
 
             # iterate through sequence file and extract sequence information
-            with open(seqin, 'r') as handle:
+            with open(sys.path[0]+'/'+seqin, 'r') as handle:
                 seq_recs = SeqIO.parse(handle, "fasta")
 
                 # check file in FASTA format
@@ -434,8 +434,10 @@ class Twrap(object):
         "write shape profiles to file for use my Tfold"""
 
         # check file doesn't already exist
-        if not os.path.exists('shp_output/shape_file' + self._shp_id + '.shp'):
-            f = open('shp_output/shape_file' + self._shp_id + '.shp', 'w')
+        if not os.path.exists(sys.path[0]+'/shp_output/' + \
+            self._shp_id + '.shp'):
+            f = open(sys.path[0]+'/shp_output/' + \
+                self._shp_id + '.shp', 'w')
 
             # write data to file
             for i in self._temp_shp[:-1]:
@@ -526,11 +528,13 @@ class Twrap(object):
         if self._shp_file is None:
 
             # create bash command
-            bashCommand = './Tfold.x -P ' + self._param_file + \
-                ' -p %d -i seq_output/%s -o %s -s %d -shp %s' % (
-                    1000, self._temp_name,
-                    'fold_output/' + self._temp_name + '.folds', 123456789,
-                    'shp_output/shape_file' + self._shp_id + '.shp')
+            bashCommand = '%sTwrap/execs/Tfold.x -P %s \
+                 -p %d -i %s -o %s -s %d -shp %s' % (sys.path[-1],
+                    sys.path[-1]+'Twrap/params/'+self._param_file,
+                    1000, sys.path[0]+'/seq_output/'+self._temp_name,
+                    sys.path[0]+'/fold_output/' + self._temp_name + '.folds', 
+                    123456789,
+                    sys.path[0] + '/shp_output/' + self._shp_id + '.shp')
 
             # create and communicate process
             process = subprocess.Popen(
@@ -540,13 +544,14 @@ class Twrap(object):
         else:
 
             # create bash command
-            bashCommand = './Tfold.x -P ' + self._param_file + \
-                ' -p %d -i seq_output/%s -o %s -s %d -shp %s -m %f -b %f' % \
-                (1000, self._temp_name,
-                 'fold_output/' + self._temp_name + '_' +
+            bashCommand = '%s/Twrap/execs/Tfold.x -P %s \
+                 -p %d -i %s -o %s -s %d -shp %s -m %f -b %f' % \
+                (sys.path[-1], sys.path[-1]+'/Twrap/params/'+self._param_file,
+                 1000, sys.path[0]+'/seq_output/'+self._temp_name,
+                 sys.path[0]+'/fold_output/' + self._temp_name + '_' +
                  str(self._mb_vals[mb, 0]) + '_' +
                  str(self._mb_vals[mb, 1]) + '.folds', 123456789,
-                 'shp_output/shape_file' + self._shp_id + '.shp',
+                 sys.path[0]+'/shp_output/' + self._shp_id + '.shp',
                  self._mb_vals[mb, 0], self._mb_vals[mb, 1])
 
             # create and communicate process
@@ -562,11 +567,11 @@ class Twrap(object):
         """
 
         # get fold files
-        fold_files = glob.glob('./fold_output/' + self.seq_names[i] + '*')
+        fold_files = glob.glob(sys.path[0]+'/fold_output/' + self.seq_names[i] + '*')
 
         # open stemloop/loop output file
         data_file = open(
-            './' +
+            sys.path[0]+'/' +
             self._sl_method +
             '_output/' +
             self.seq_names[i] +
@@ -617,9 +622,9 @@ class Twrap(object):
                     if 'stem' in self._sl_method:
 
                         # calculate sl energy
-                        cmd = './Eval.x -s ' + \
+                        cmd = sys.path[-1]+'/Twrap/execs/Eval.x -s ' + \
                             sl_ids[-2] + ' -f "' + sl_ids[-1] + '" -P ' + \
-                            self._param_file
+                            sys.path[-1]+'/Twrap/params/'+self._param_file
                         e_log = subprocess.check_output(
                             cmd, shell=True).decode()
                         if self._ecut is not None:
@@ -657,14 +662,14 @@ class Twrap(object):
         """
 
         # get fold files
-        fold_files0 = glob.glob('./fold_output/' + self.seq_names[i] + '*')
+        fold_files0 = glob.glob(sys.path[0]+'/fold_output/' + self.seq_names[i] + '*')
 
         # filter down fold files based on m&b values
         fold_files = [cc for cc in fold_files0 if str(
             self._mb_vals[mb, 0]) + '_' + str(self._mb_vals[mb, 1]) in cc]
 
         # create sl/l data output file
-        data_file = open('./' +
+        data_file = open(sys.path[0]+'/' +
                          self._sl_method +
                          '_output/' +
                          self.seq_names[i] +
@@ -715,9 +720,9 @@ class Twrap(object):
                     if 'stem' in self._sl_method:
 
                         # get energy of stemloop
-                        cmd = './Eval.x -s ' + \
+                        cmd = sys.path[-1]+'/Twrap/execs/Eval.x -s ' + \
                             sl_ids[-2] + ' -f "' + sl_ids[-1] + '" -P ' + \
-                            self._param_file
+                            sys.path[-1]+'/Twrap/params/'+self._param_file
 
                         e_log = subprocess.check_output(
                             cmd, shell=True).decode()
